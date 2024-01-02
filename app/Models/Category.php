@@ -16,11 +16,11 @@ class Category extends Model
 
     public function subCategories()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsToMany(Category::class, 'category_category', 'category_id', 'sub_category_id')->withTimestamps();
     }
 
     public function parentCategory()
     {
-        return $this->belongsTo(Category::class);
+        return $this->belongsTo(Category::class, 'parent_id');
     }
 }

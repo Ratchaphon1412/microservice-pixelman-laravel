@@ -36,12 +36,10 @@ class CategorySeeder extends Seeder
             $category = Category::create(['name' => $categoryData['name']]);
 
             if (isset($categoryData['children'])) {
-                $subCategoryIds = [];
                 foreach ($categoryData['children'] as $childData) {
                     $subCategory = Category::create($childData);
-                    $subCategories[] = $subCategory;
+                    $category->subCategories()->attach($subCategory);
                 }
-                $category->subCategories()->sync($subCategoryIds);
             }
         }
     }
