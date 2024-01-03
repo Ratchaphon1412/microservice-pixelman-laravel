@@ -10,6 +10,29 @@ use Illuminate\Support\Facades\Validator;
 
 class ProductController extends Controller
 {
+    private function formatProduct($product)
+    {
+        return [
+            'id' => $product->id,
+            'name' => $product->name,
+            'description' => $product->description,
+            'category' => $product->category->name,
+            'price' => $product->price,
+            'status' => $product->status,
+            'gender' => $product->gender,
+            'images' => self::formatImages($product->images),
+            'created_at' => $product->created_at,
+            'updated_at' => $product->updated_at,
+        ];
+    }
+
+    private static function formatImages($images)
+    {
+        return $images->map(function ($image) {
+            return $image->path;
+        });
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -25,13 +48,18 @@ class ProductController extends Controller
             return response()->json(json_decode($cachedData, true));
         } else {
             // If not cached, fetch products from the database
-            $products = Product::all();
+            $products = Product::with('category', 'images')->get();
+
+            // Format the fetched data
+            $formattedProducts = $products->map(function ($product) {
+                return $this->formatProduct($product);
+            });
 
             // Store the fetched data in the cache
-            Redis::set($productsKey, json_encode($products));
+            Redis::set($productsKey, json_encode($formattedProducts));
 
             // Return the fetched data
-            return response()->json($products);
+            return response()->json($formattedProducts);
         }
     }
 

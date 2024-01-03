@@ -27,40 +27,34 @@ class ProductSeeder extends Seeder
         $colors = Color::whereIn('hex_color', ['#ffffff', '#000000', '#ff0000', '#00ff00'])->pluck('id')->toArray();
         $sizes = Size::whereIn('name', ['S', 'M', 'L', 'XL'])->pluck('id')->toArray();
 
-        $imagePaths = [
-            'image1.png',
-            'image2.png',
-            'image3.png',
-        ];
-
         $products = [
             [
                 'name' => 'T-Shirt',
                 'description' => 'T-Shirt',
                 'category' => $tShirts,
-                // 'categories' => [$tops, $tShirts],
                 'price' => 100,
                 'gender' => 'Unisex',
+                'images' => ['image1.png', 'image2.png', 'image3.png'],
             ],
             [
                 'name' => 'Jeans',
                 'description' => 'Jeans',
                 'category' => $jeans,
-                // 'categories' => [$bottoms, $jeans],
                 'price' => 150,
                 'gender' => 'Men',
+                'images' => ['image4.png', 'image5.png', 'image6.png'],
             ],
             [
                 'name' => 'Dress',
                 'description' => 'Dress',
                 'category' => $dress,
-                // 'categories' => [$tops, $dress],
                 'price' => 200,
                 'gender' => 'Women',
+                'images' => ['image7.png', 'image8.png', 'image9.png'],
             ],
         ];
 
-        foreach ($products as $key => $productData) {
+        foreach ($products as $productData) {
             $product = Product::create([
                 'name' => $productData['name'],
                 'description' => $productData['description'],
@@ -69,21 +63,18 @@ class ProductSeeder extends Seeder
                 'gender' => $productData['gender'],
             ]);
 
-            $image = Image::create([
-                'path' => $imagePaths[$key],
-                'product_id' => $product->id,
-            ]);
+            foreach ($productData['images'] as $imagePath) {
+                $image = Image::create([
+                    'path' => $imagePath,
+                    'product_id' => $product->id,
+                ]);
 
-            // $numSizes = rand(1, count($sizes));
-            // $selectedSizes = (array) array_rand($sizes, $numSizes);
+                $product->images()->save($image);
+            }
+
             $product->sizes()->sync($sizes);
-
-            // $numColors = rand(1, count($colors));
-            // $selectedColors = (array) array_rand($colors, $numColors);
             $product->colors()->sync($colors);
             $product->category()->associate($productData['category']);
-            // $product->categories()->attach($productData['categories']);
-            $product->images()->save($image);
 
             foreach ($sizes as $sizeId) {
                 foreach ($colors as $colorId) {
@@ -97,8 +88,9 @@ class ProductSeeder extends Seeder
             }
         }
 
-        $productsKey = 'products';
-        $products = Product::all();
-        Redis::set($productsKey, json_encode($products));
+        Redis::flushAll();
+        // $productsKey = 'products';
+        // $products = Product::all();
+        // Redis::set($productsKey, json_encode($products));
     }
 }
