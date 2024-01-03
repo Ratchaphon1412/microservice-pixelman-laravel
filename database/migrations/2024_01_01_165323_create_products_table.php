@@ -17,9 +17,8 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->foreignId('category_id')->constrained();
             $table->integer('price');
-            $table->enum('status', ['active', 'inactive'])->default('active');
+            $table->enum('status', ['active', 'inactive'])->default('inactive');
             $table->enum('gender', ['Unisex', 'Men', 'Women', 'Kids'])->default('Unisex');
-            $table->string('image')->nullable();
             $table->timestamps();
         });
     }

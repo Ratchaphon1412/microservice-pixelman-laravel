@@ -9,6 +9,15 @@ class Product extends Model
 {
     use HasFactory;
 
+    protected $fillable = [
+        'name',
+        'description',
+        'category_id',
+        'price',
+        'status',
+        'gender'
+    ];
+
     public function colors()
     {
         return $this->belongsToMany(Color::class);
@@ -19,10 +28,15 @@ class Product extends Model
         return $this->belongsToMany(Size::class);
     }
 
-    public function categories()
+    public function category()
     {
-        return $this->belongsToMany(Category::class);
+        return $this->belongsTo(Category::class);
     }
+
+    // public function categories()
+    // {
+    //     return $this->belongsToMany(Category::class);
+    // }
 
     public function stocks()
     {

@@ -9,6 +9,7 @@ use App\Models\Product;
 use App\Models\Size;
 use App\Models\Stock;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Redis;
 
 class ProductSeeder extends Seeder
 {
@@ -37,7 +38,7 @@ class ProductSeeder extends Seeder
                 'name' => 'T-Shirt',
                 'description' => 'T-Shirt',
                 'category' => $tShirts,
-                'categories' => [$tops, $tShirts],
+                // 'categories' => [$tops, $tShirts],
                 'price' => 100,
                 'gender' => 'Unisex',
             ],
@@ -45,7 +46,7 @@ class ProductSeeder extends Seeder
                 'name' => 'Jeans',
                 'description' => 'Jeans',
                 'category' => $jeans,
-                'categories' => [$bottoms, $jeans],
+                // 'categories' => [$bottoms, $jeans],
                 'price' => 150,
                 'gender' => 'Men',
             ],
@@ -53,7 +54,7 @@ class ProductSeeder extends Seeder
                 'name' => 'Dress',
                 'description' => 'Dress',
                 'category' => $dress,
-                'categories' => [$tops, $dress],
+                // 'categories' => [$tops, $dress],
                 'price' => 200,
                 'gender' => 'Women',
             ],
@@ -80,8 +81,8 @@ class ProductSeeder extends Seeder
             // $numColors = rand(1, count($colors));
             // $selectedColors = (array) array_rand($colors, $numColors);
             $product->colors()->sync($colors);
-
-            $product->categories()->attach($productData['categories']);
+            $product->category()->associate($productData['category']);
+            // $product->categories()->attach($productData['categories']);
             $product->images()->save($image);
 
             foreach ($sizes as $sizeId) {
@@ -95,5 +96,9 @@ class ProductSeeder extends Seeder
                 }
             }
         }
+
+        $productsKey = 'products';
+        $products = Product::all();
+        Redis::set($productsKey, json_encode($products));
     }
 }
