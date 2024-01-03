@@ -24,5 +24,9 @@ class ColorSeeder extends Seeder
         $color = new Color();
         $color->hex_color = '#ff0000';
         $color->save();
+
+        $color = new Color();
+        $color->hex_color = '#00ff00';
+        $color->save();
     }
 }

@@ -24,5 +24,9 @@ class SizeSeeder extends Seeder
         $size = new Size();
         $size->name = 'L';
         $size->save();
+
+        $size = new Size();
+        $size->name = 'XL';
+        $size->save();
     }
 }

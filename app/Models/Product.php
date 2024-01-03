@@ -28,4 +28,9 @@ class Product extends Model
     {
         return $this->hasMany(Stock::class);
     }
+
+    public function images()
+    {
+        return $this->hasMany(Image::class);
+    }
 }
