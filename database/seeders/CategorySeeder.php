@@ -38,6 +38,8 @@ class CategorySeeder extends Seeder
             if (isset($categoryData['children'])) {
                 foreach ($categoryData['children'] as $childData) {
                     $subCategory = Category::create($childData);
+                    $subCategory->parentCategory()->associate($category);
+                    $subCategory->save();
                     $category->subCategories()->attach($subCategory);
                 }
             }
