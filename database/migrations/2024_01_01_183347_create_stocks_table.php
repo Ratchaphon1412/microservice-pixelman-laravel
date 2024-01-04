@@ -17,6 +17,7 @@ return new class extends Migration
             $table->foreignId('size_id')->constrained();
             $table->foreignId('color_id')->constrained();
             $table->integer('quantity');
+            $table->float('price');
             $table->timestamps();
         });
     }

@@ -35,6 +35,22 @@ class ProductSeeder extends Seeder
                 'price' => 100,
                 'gender' => 'Unisex',
                 'images' => ['image1.png', 'image2.png', 'image3.png'],
+                'stocks' => [
+                    [
+                        'color_id' => $colors[0],
+                        'sizes' => [
+                            ['size_id' => $sizes[0], 'quantity' => 30, 'price' => 50],
+                            ['size_id' => $sizes[1], 'quantity' => 20, 'price' => 55],
+                        ],
+                    ],
+                    [
+                        'color_id' => $colors[1],
+                        'sizes' => [
+                            ['size_id' => $sizes[2], 'quantity' => 25, 'price' => 60],
+                            ['size_id' => $sizes[3], 'quantity' => 18, 'price' => 65],
+                        ],
+                    ],
+                ],
             ],
             [
                 'name' => 'Jeans',
@@ -43,6 +59,22 @@ class ProductSeeder extends Seeder
                 'price' => 150,
                 'gender' => 'Men',
                 'images' => ['image4.png', 'image5.png', 'image6.png'],
+                'stocks' => [
+                    [
+                        'color_id' => $colors[2],
+                        'sizes' => [
+                            ['size_id' => $sizes[0], 'quantity' => 28, 'price' => 70],
+                            ['size_id' => $sizes[1], 'quantity' => 22, 'price' => 75],
+                        ],
+                    ],
+                    [
+                        'color_id' => $colors[3],
+                        'sizes' => [
+                            ['size_id' => $sizes[2], 'quantity' => 20, 'price' => 80],
+                            ['size_id' => $sizes[3], 'quantity' => 15, 'price' => 85],
+                        ],
+                    ],
+                ],
             ],
             [
                 'name' => 'Dress',
@@ -51,6 +83,22 @@ class ProductSeeder extends Seeder
                 'price' => 200,
                 'gender' => 'Women',
                 'images' => ['image7.png', 'image8.png', 'image9.png'],
+                'stocks' => [
+                    [
+                        'color_id' => $colors[0],
+                        'sizes' => [
+                            ['size_id' => $sizes[0], 'quantity' => 35, 'price' => 90],
+                            ['size_id' => $sizes[1], 'quantity' => 28, 'price' => 95],
+                        ],
+                    ],
+                    [
+                        'color_id' => $colors[2],
+                        'sizes' => [
+                            ['size_id' => $sizes[2], 'quantity' => 18, 'price' => 100],
+                            ['size_id' => $sizes[3], 'quantity' => 15, 'price' => 105],
+                        ],
+                    ],
+                ],
             ],
         ];
 
@@ -59,7 +107,6 @@ class ProductSeeder extends Seeder
                 'name' => $productData['name'],
                 'description' => $productData['description'],
                 'category_id' => $productData['category'],
-                'price' => $productData['price'],
                 'gender' => $productData['gender'],
             ]);
 
@@ -76,21 +123,24 @@ class ProductSeeder extends Seeder
             $product->colors()->sync($colors);
             $product->category()->associate($productData['category']);
 
-            foreach ($sizes as $sizeId) {
-                foreach ($colors as $colorId) {
+            foreach ($productData['stocks'] as $stockData) {
+                $color_id = $stockData['color_id'];
+
+                foreach ($stockData['sizes'] as $sizeData) {
+                    $size_id = $sizeData['size_id'];
+                    $quantity = $sizeData['quantity'];
+                    $price = $sizeData['price'];
+
                     Stock::create([
                         'product_id' => $product->id,
-                        'color_id' => $colorId,
-                        'size_id' => $sizeId,
-                        'quantity' => rand(20, 40),
+                        'color_id' => $color_id,
+                        'size_id' => $size_id,
+                        'quantity' => $quantity,
+                        'price' => $price,
                     ]);
                 }
             }
         }
-
         Redis::flushAll();
-        // $productsKey = 'products';
-        // $products = Product::all();
-        // Redis::set($productsKey, json_encode($products));
     }
 }

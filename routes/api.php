@@ -27,4 +27,5 @@ Route::put('products/{id}/activate', [ProductController::class, 'activate']);
 Route::put('products/{product}/deactivate', [ProductController::class, 'deactivate']);
 Route::get('search', SearchController::class)->name('search');
 
+Route::put('stocks/{id}', [StockController::class, 'update']);
 Route::apiResource('stocks', StockController::class);
