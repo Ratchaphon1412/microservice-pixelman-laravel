@@ -86,15 +86,22 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
+        // Validate data
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
             'gender' => 'required|string',
+            'stocks' => 'required|array',
+            'stocks.*.color_id' => 'required|exists:colors,id',
+            'stocks.*.sizes' => 'required|array',
+            'stocks.*.sizes.*.size_id' => 'required|exists:sizes,id',
+            'stocks.*.sizes.*.quantity' => 'required|integer|min:0',
+            'stocks.*.sizes.*.price' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
-            return response()->json($validator->errors(), 422);
+            return response()->json(['errors' => $validator->errors()], 422);
         }
 
         $product = new Product([
@@ -103,38 +110,40 @@ class ProductController extends Controller
             'category_id' => $request->input('category_id'),
             'gender' => $request->input('gender'),
         ]);
-        $product->save();
-        $product->category()->associate($request->input('category_id'));
-        // $product->categories()->sync($request->input('categories_id'));
-        // Store all product data in Redis
-        Redis::set('products', json_encode(Product::all()));
 
-        // Create stocks process
-        $stocks = $request->input('stocks');
-        foreach ($stocks as $stockData) {
+        $product->save();
+
+        foreach ($request->input('stocks') as $stockData) {
             $color_id = $stockData['color_id'];
 
             foreach ($stockData['sizes'] as $sizeData) {
-                $size_id = $sizeData['size_id'];
-                $quantity = $sizeData['quantity'];
-                $price = $sizeData['price'];
-                // Create stock
-                Stock::create(
-                    [
-                        'product_id' => $product->id,
-                        'color_id' => $color_id,
-                        'size_id' => $size_id,
-                        'quantity' => $quantity,
-                        'price' => $price
-                    ],
-                );
+
+                $stock = new Stock();
+                $stock->product_id = $product->id;
+                $stock->color_id = $color_id;
+                $stock->size_id = $sizeData['size_id'];
+                $stock->quantity = $sizeData['quantity'];
+                $stock->price = $sizeData['price'];
+                $stock->save();
+
+                $product->stocks()->save($stock);
             }
         }
-        // Store all stocks in Redis
-        Redis::set('stocks', json_encode(Stock::all()));
+        // Fetch products from the database
+        $products = Product::with('category', 'images')->get();
+
+        // Format the fetched data
+        $formattedProducts = $products->map(function ($product) {
+            return $this->formatProduct($product);
+        });
+
+        $productsKey = 'products';
+        // Store the fetched data in the cache
+        Redis::set($productsKey, json_encode($formattedProducts));
 
         return response()->json(['message' => 'Product created successfully', 'product' => $product], 201);
     }
+
 
     /**
      * Display the specified resource.

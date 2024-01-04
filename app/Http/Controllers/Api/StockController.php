@@ -14,7 +14,8 @@ class StockController extends Controller
      */
     public function index()
     {
-        //
+        $stocks = Stock::all();
+        return $stocks;
     }
 
     /**
@@ -91,7 +92,6 @@ class StockController extends Controller
      */
     public function update(Request $request, Stock $stock)
     {
-        
     }
 
     /**
