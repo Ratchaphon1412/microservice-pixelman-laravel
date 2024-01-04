@@ -1,0 +1,19 @@
+type Query {
+    products: [Product!] @paginate
+    findProducts(id: ID @eq): Product @find
+    searchProducts(search: String @search): [Product!] @paginate
+}
+
+type Product {
+    id: ID!
+    name: String!
+    price: Float!
+    gender: String!
+    description: String
+    category: Category
+}
+
+type Category {
+    id: ID!
+    name: String!
+}

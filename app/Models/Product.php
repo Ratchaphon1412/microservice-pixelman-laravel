@@ -4,10 +4,13 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Laravel\Scout\Searchable;
+
 
 class Product extends Model
 {
     use HasFactory;
+    use Searchable;
 
     protected $fillable = [
         'name',
@@ -74,5 +77,18 @@ class Product extends Model
                 return $image->path;
             }),
         ];
+    }
+
+    public function toSearchableArray(): array
+    {
+        $array = $this->toArray();
+
+        // Customize array...
+        $array['image_product'] = $this->images()->first();
+        $array['category_name'] = $this->category()->first()->name;
+        $array['color_all'] = $this->colors()->get();
+        $array['size_all'] = $this->sizes()->get();
+
+        return $array;
     }
 }

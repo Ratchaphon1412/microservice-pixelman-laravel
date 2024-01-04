@@ -1,7 +1,9 @@
 <?php
 
 use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Api\StockController;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -23,6 +25,8 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::apiResource('products', ProductController::class);
 Route::put('products/{id}/activate', [ProductController::class, 'activate']);
 Route::put('products/{id}/deactivate', [ProductController::class, 'deactivate']);
+// Route::put('products/{product}/deactivate', [ProductController::class, 'deactivate']);
+Route::get('search', SearchController::class)->name('search');
 
 Route::put('stocks/{id}', [StockController::class, 'update']);
 Route::apiResource('stocks', StockController::class);
