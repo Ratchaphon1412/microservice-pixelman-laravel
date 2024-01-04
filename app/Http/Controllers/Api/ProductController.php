@@ -9,6 +9,7 @@ use App\Models\Stock;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
+use Symfony\Component\Console\Input\Input;
 
 class ProductController extends Controller
 {
@@ -95,74 +96,38 @@ class ProductController extends Controller
             'description' => 'required|string',
             'category_id' => 'required|exists:categories,id',
             'gender' => 'required|string',
-            'stocks' => 'required|array',
-            'stocks.*.color_id' => 'required|exists:colors,id',
-            'stocks.*.sizes' => 'required|array',
-            'stocks.*.sizes.*.size_id' => 'required|exists:sizes,id',
-            'stocks.*.sizes.*.quantity' => 'required|integer|min:0',
-            'stocks.*.sizes.*.price' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $productData = [
+        $product = Product::create([
             'name' => $request->input('name'),
             'description' => $request->input('description'),
             'category_id' => $request->input('category_id'),
             'gender' => $request->input('gender'),
-        ];
+        ]);
 
-        $product = Product::create($productData);
+        if ($request->hasFile('images')) {
+            foreach ($request->file('images') as $image) {
 
-        $stocksData = $request->input('stocks');
+                $imageName = time() . '_' . $image->getClientOriginalName();
+                $image->move(public_path('images/products'), $imageName);
+                $path = 'images/products/' . $imageName;
 
-        $stocks = [];
-        foreach ($stocksData as $stockData) {
-            $color_id = $stockData['color_id'];
-
-            foreach ($stockData['sizes'] as $sizeData) {
-                $stock = [
+                $product->images()->create([
                     'product_id' => $product->id,
-                    'color_id' => $color_id,
-                    'size_id' => $sizeData['size_id'],
-                    'quantity' => $sizeData['quantity'],
-                    'price' => $sizeData['price'],
-                ];
-
-                $stocks[] = $stock;
+                    'path' => $path,
+                ]);
             }
         }
-        Stock::insert($stocks);
 
         // Update products in Redis
         $products = Product::with('category', 'images')->get();
 
-        $formattedProducts = $products->map(function ($product) {
-            return $this->formatProduct($product);
-        });
-
-        $productsKey = 'products';
-        Redis::set($productsKey, json_encode($formattedProducts));
-
-        if ($request->hasFile('images')) {
-            $images = $request->file('images');
-            $uploadedImages = [];
-
-            foreach ($images as $image) {
-                $imageName = time() . '_' . $image->getClientOriginalName();
-                $image->move(public_path('product/images'), $imageName);
-                $path = 'product/images/' . $imageName;
-
-                $uploadedImages[] = [
-                    'product_id' => $product->id,
-                    'path' => $path,
-                ];
-            }
-            Image::insert($uploadedImages);
-        }
-
+        $formattedProducts = $products->map(fn ($product) => $this->formatProduct($product));
+        Redis::set('products', $formattedProducts->toJson());
 
         return response()->json(['message' => 'Product created successfully', 'product' => $product], 201);
     }

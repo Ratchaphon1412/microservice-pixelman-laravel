@@ -39,54 +39,52 @@ class StockController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    // Disabled
-    // public function store(Request $request)
-    // {
-    //     // Validate User Token
+    public function store(Request $request)
+    {
+        // Validate User Token
 
-    //     // Validate Data
-    //     $validator = Validator::make($request->all(), [
-    //         'stocks' => 'required|array',
-    //         'stocks.*.color_id' => 'required',
-    //         'stocks.*.sizes' => 'required|array',
-    //         'stocks.*.sizes.*.size_id' => 'required',
-    //         'stocks.*.sizes.*.quantity' => 'required|integer|min:0',
-    //     ]);
+        // Validate Data
+        $validator = Validator::make($request->all(), [
+            'stocks' => 'required|array',
+            'stocks.*.color_id' => 'required',
+            'stocks.*.sizes' => 'required|array',
+            'stocks.*.sizes.*.size_id' => 'required',
+            'stocks.*.sizes.*.quantity' => 'required|integer|min:0',
+        ]);
 
-    //     if ($validator->fails()) {
-    //         return response()->json(['errors' => $validator->errors()], 400);
-    //     }
+        if ($validator->fails()) {
+            return response()->json(['errors' => $validator->errors()], 400);
+        }
 
-    //     $product_id = $request->input('product_id');
-    //     $stocks = $request->input('stocks');
+        $product_id = $request->input('product_id');
+        $stockData = $request->input('stocks');
 
-    //     foreach ($stocks as $stockData) {
-    //         $color_id = $stockData['color_id'];
+        $stocks = [];
+        foreach ($stockData as $stockData) {
+            $color_id = $stockData['color_id'];
 
-    //         foreach ($stockData['sizes'] as $sizeData) {
-    //             $size_id = $sizeData['size_id'];
-    //             $quantity = $sizeData['quantity'];
+            foreach ($stockData['sizes'] as $sizeData) {
+                $stock = [
+                    'product_id' => $product_id,
+                    'color_id' => $color_id,
+                    'size_id' => $sizeData['size_id'],
+                    'quantity' => $sizeData['quantity'],
+                    'price' => $sizeData['price'],
+                ];
 
-    //             // Create stock
-    //             Stock::create(
-    //                 [
-    //                     'product_id' => $product_id,
-    //                     'color_id' => $color_id,
-    //                     'size_id' => $size_id,
-    //                     'quantity' => $quantity
-    //                 ],
-    //             );
-    //         }
-    //     }
+                $stocks[] = $stock;
+            }
+        }
+        Stock::insert($stocks);
 
-    //     // Update products in Redis
-    //     Redis::set('products', json_encode(Product::all()));
+        // Update products in Redis
+        Redis::set('products', json_encode(Product::all()));
 
-    //     // Update stocks in Redis
-    //     Redis::set('stocks', json_encode(Stock::all()));
+        // Update stocks in Redis
+        Redis::set('stocks', json_encode(Stock::all()));
 
-    //     return response()->json(['message' => 'Stocks created successfully'], 201);
-    // }
+        return response()->json(['message' => 'Stocks created successfully'], 201);
+    }
 
     /**
      * Display the specified resource.
