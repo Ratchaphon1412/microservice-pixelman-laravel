@@ -55,6 +55,10 @@ class Product extends Model
         $array = $this->toArray();
 
         // Customize array...
+        $array['image_product'] = $this->images()->first();
+        $array['category_name'] = $this->category()->first()->name;
+        $array['color_all'] = $this->colors()->get();
+        $array['size_all'] = $this->sizes()->get();
 
         return $array;
     }
