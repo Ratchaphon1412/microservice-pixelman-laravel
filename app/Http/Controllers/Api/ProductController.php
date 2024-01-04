@@ -138,7 +138,7 @@ class ProductController extends Controller
      */
     public function show(Product $product)
     {
-        $product = Product::find($product->id);
+        $product = self::formatProduct(Product::find($product->id));
         return $product;
     }
 
