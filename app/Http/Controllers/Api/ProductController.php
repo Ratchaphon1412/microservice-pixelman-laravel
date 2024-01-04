@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Image;
 use App\Models\Product;
 use App\Models\Stock;
 use Illuminate\Http\Request;
@@ -86,7 +87,9 @@ class ProductController extends Controller
      */
     public function store(Request $request)
     {
-        // Validate data
+        // Validate User Token
+
+        // Validate Data
         $validator = Validator::make($request->all(), [
             'name' => 'required|string',
             'description' => 'required|string',
@@ -104,42 +107,62 @@ class ProductController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
-        $product = new Product([
+        $productData = [
             'name' => $request->input('name'),
             'description' => $request->input('description'),
             'category_id' => $request->input('category_id'),
             'gender' => $request->input('gender'),
-        ]);
+        ];
 
-        $product->save();
+        $product = Product::create($productData);
 
-        foreach ($request->input('stocks') as $stockData) {
+        $stocksData = $request->input('stocks');
+
+        $stocks = [];
+        foreach ($stocksData as $stockData) {
             $color_id = $stockData['color_id'];
 
             foreach ($stockData['sizes'] as $sizeData) {
+                $stock = [
+                    'product_id' => $product->id,
+                    'color_id' => $color_id,
+                    'size_id' => $sizeData['size_id'],
+                    'quantity' => $sizeData['quantity'],
+                    'price' => $sizeData['price'],
+                ];
 
-                $stock = new Stock();
-                $stock->product_id = $product->id;
-                $stock->color_id = $color_id;
-                $stock->size_id = $sizeData['size_id'];
-                $stock->quantity = $sizeData['quantity'];
-                $stock->price = $sizeData['price'];
-                $stock->save();
-
-                $product->stocks()->save($stock);
+                $stocks[] = $stock;
             }
         }
-        // Fetch products from the database
+        Stock::insert($stocks);
+
+        // Update products in Redis
         $products = Product::with('category', 'images')->get();
 
-        // Format the fetched data
         $formattedProducts = $products->map(function ($product) {
             return $this->formatProduct($product);
         });
 
         $productsKey = 'products';
-        // Store the fetched data in the cache
         Redis::set($productsKey, json_encode($formattedProducts));
+
+        if ($request->hasFile('images')) {
+            $images = $request->file('images');
+            $uploadedImages = [];
+
+            foreach ($images as $image) {
+                $imageName = time() . '_' . $image->getClientOriginalName();
+                $image->move(public_path('product/images'), $imageName);
+                $path = 'product/images/' . $imageName;
+
+                $uploadedImages[] = [
+                    'product_id' => $product->id,
+                    'path' => $path,
+                ];
+            }
+            Image::insert($uploadedImages);
+        }
+
 
         return response()->json(['message' => 'Product created successfully', 'product' => $product], 201);
     }
