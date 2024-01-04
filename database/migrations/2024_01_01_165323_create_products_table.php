@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('name');
             $table->text('description')->nullable();
             $table->foreignId('category_id')->constrained();
+            $table->float('price')->nullable();
             $table->enum('status', ['active', 'inactive'])->default('inactive');
             $table->enum('gender', ['Unisex', 'Men', 'Women', 'Kids'])->default('Unisex');
             $table->timestamps();

@@ -22,7 +22,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 
 Route::apiResource('products', ProductController::class);
 Route::put('products/{id}/activate', [ProductController::class, 'activate']);
-Route::put('products/{product}/deactivate', [ProductController::class, 'deactivate']);
+Route::put('products/{id}/deactivate', [ProductController::class, 'deactivate']);
 
 Route::put('stocks/{id}', [StockController::class, 'update']);
 Route::apiResource('stocks', StockController::class);

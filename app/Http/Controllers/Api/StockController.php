@@ -5,12 +5,20 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\Stock;
+use App\Services\ProductCacheService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 
 class StockController extends Controller
 {
+    private $productCacheService;
+
+    public function __construct(ProductCacheService $productCacheService)
+    {
+        $this->productCacheService = $productCacheService;
+    }
+
     /**
      * Display a listing of the resource.
      */
@@ -29,14 +37,6 @@ class StockController extends Controller
     }
 
     /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
@@ -50,35 +50,44 @@ class StockController extends Controller
             'stocks.*.sizes' => 'required|array',
             'stocks.*.sizes.*.size_id' => 'required',
             'stocks.*.sizes.*.quantity' => 'required|integer|min:0',
+            'stocks.*.sizes.*.price' => 'required|numeric|min:0',
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 400);
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 400);
         }
 
         $product_id = $request->input('product_id');
-        $stockData = $request->input('stocks');
+        $product = Product::find($product_id);
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
 
-        $stocks = [];
+        $stockData = $request->input('stocks');
+        $lowestPrice = PHP_INT_MAX;
         foreach ($stockData as $stockData) {
             $color_id = $stockData['color_id'];
 
             foreach ($stockData['sizes'] as $sizeData) {
-                $stock = [
+                $sizeDataPrice = $sizeData['price'];
+                $lowestPrice = min($lowestPrice, $sizeDataPrice);
+
+                // Create stock
+                Stock::create([
                     'product_id' => $product_id,
                     'color_id' => $color_id,
                     'size_id' => $sizeData['size_id'],
                     'quantity' => $sizeData['quantity'],
-                    'price' => $sizeData['price'],
-                ];
-
-                $stocks[] = $stock;
+                    'price' => $sizeDataPrice,
+                ]);
             }
         }
-        Stock::insert($stocks);
 
-        // Update products in Redis
-        Redis::set('products', json_encode(Product::all()));
+        Product::where('id', $product_id)->update(['price' => $lowestPrice]);
+
+
+        // Update products in Redis using the service
+        $this->productCacheService->updateRedisProducts();
 
         // Update stocks in Redis
         Redis::set('stocks', json_encode(Stock::all()));
@@ -91,15 +100,7 @@ class StockController extends Controller
      */
     public function show(Stock $stock)
     {
-        //
-    }
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Stock $stock)
-    {
-        //
+        return $stock;
     }
 
     /**
@@ -118,8 +119,8 @@ class StockController extends Controller
             'price' => $price
         ]);
 
-        // Update products in Redis
-        Redis::set('products', json_encode(Product::all()));
+        // Update products in Redis using the service
+        $this->productCacheService->updateRedisProducts();
 
         // Update stocks in Redis
         Redis::set('stocks', json_encode(Stock::all()));
@@ -132,5 +133,14 @@ class StockController extends Controller
      */
     public function destroy(Stock $stock)
     {
+        $stock->delete();
+
+        // Update products in Redis using the service
+        $this->productCacheService->updateRedisProducts();
+
+        // Update stocks in Redis
+        Redis::set('stocks', json_encode(Stock::all()));
+
+        return response()->json(['message' => 'Stock deleted successfully'], 200);
     }
 }

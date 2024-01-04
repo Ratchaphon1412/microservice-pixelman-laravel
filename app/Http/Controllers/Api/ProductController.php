@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Image;
 use App\Models\Product;
 use App\Models\Stock;
+use App\Services\ProductCacheService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
@@ -13,36 +14,11 @@ use Symfony\Component\Console\Input\Input;
 
 class ProductController extends Controller
 {
-    private function formatProduct($product)
+    private $productCacheService;
+
+    public function __construct(ProductCacheService $productCacheService)
     {
-        $stocks = $product->stocks;
-        $lowestPrice = PHP_INT_MAX; // Initialize with the maximum possible integer value
-
-        foreach ($stocks as $stock) {
-            if ($stock->price < $lowestPrice) {
-                $lowestPrice = $stock->price;
-            }
-        }
-
-        return [
-            'id' => $product->id,
-            'name' => $product->name,
-            'description' => $product->description,
-            'category' => $product->category->name,
-            'price' => $lowestPrice,
-            'status' => $product->status,
-            'gender' => $product->gender,
-            'images' => self::formatImages($product->images),
-            'created_at' => $product->created_at,
-            'updated_at' => $product->updated_at,
-        ];
-    }
-
-    private static function formatImages($images)
-    {
-        return $images->map(function ($image) {
-            return $image->path;
-        });
+        $this->productCacheService = $productCacheService;
     }
 
     /**
@@ -64,23 +40,15 @@ class ProductController extends Controller
 
             // Format the fetched data
             $formattedProducts = $products->map(function ($product) {
-                return $this->formatProduct($product);
+                return $product->formatProduct($product);
             });
 
             // Store the fetched data in the cache
-            Redis::set($productsKey, json_encode($formattedProducts));
+            Redis::set('products', json_encode($formattedProducts));
 
             // Return the fetched data
             return response()->json($formattedProducts);
         }
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
     }
 
     /**
@@ -99,7 +67,7 @@ class ProductController extends Controller
         ]);
 
         if ($validator->fails()) {
-            return response()->json(['errors' => $validator->errors()], 422);
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 422);
         }
 
         $product = Product::create([
@@ -123,11 +91,8 @@ class ProductController extends Controller
             }
         }
 
-        // Update products in Redis
-        $products = Product::with('category', 'images')->get();
-
-        $formattedProducts = $products->map(fn ($product) => $this->formatProduct($product));
-        Redis::set('products', $formattedProducts->toJson());
+        // Update products in Redis using the service
+        $this->productCacheService->updateRedisProducts();
 
         return response()->json(['message' => 'Product created successfully', 'product' => $product], 201);
     }
@@ -136,10 +101,13 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $product)
+    public function show($id)
     {
-        $product = self::formatProduct(Product::find($product->id));
-        return $product;
+        $product = Product::with('category', 'images')->find($id);
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+        return $product->formatProduct();
     }
 
     public function activate($id)
@@ -152,8 +120,8 @@ class ProductController extends Controller
 
         $product->update(['status' => 'active']);
 
-        // Update products in Redis
-        Redis::set('products', json_encode(Product::all()));
+        // Update products in Redis using the service
+        $this->productCacheService->updateRedisProducts();
 
         return response()->json(['message' => 'Product activated successfully'], 200);
     }
@@ -167,26 +135,33 @@ class ProductController extends Controller
 
         $product->update(['status' => 'inactive']);
 
-        // Update products in Redis
-        Redis::set('products', json_encode(Product::all()));
+        // Update products in Redis using the service
+        $this->productCacheService->updateRedisProducts();
 
         return response()->json(['message' => 'Product deactivated successfully'], 200);
     }
 
     /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Product $product)
-    {
-        //
-    }
-
-    /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Product $product)
+    public function update(Request $request, $id)
     {
-        //
+        $product = Product::find($id);
+        if (!$product) {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+        $product->update([
+            'name' => $request->input('name'),
+            'description' => $request->input('description'),
+            'category_id' => $request->input('category_id'),
+            'gender' => $request->input('gender'),
+        ]);
+
+        // Update products in Redis using the service
+        $this->productCacheService->updateRedisProducts();
+
+        return response()->json(['message' => 'Product updated successfully', 'product' => $product], 200);
     }
 
     /**
@@ -194,6 +169,12 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
-        //
+        $product->stocks()->delete();
+        $product->delete();
+
+        // Update products in Redis using the service
+        $this->productCacheService->updateRedisProducts();
+
+        return response()->json(['message' => 'Product deleted successfully'], 200);
     }
 }
