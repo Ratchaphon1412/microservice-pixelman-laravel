@@ -13,3 +13,5 @@
 -   [Vault PHP Docs](https://vault-php.readthedocs.io/en/latest/#)
 -   [Laravel Scout](https://laravel.com/docs/10.x/scout)
 -   [Search Engine Meilisearch](https://fajarwz.com/blog/simple-and-advanced-search-with-laravel-scout-and-meilisearch/)
+-   [GraphQL Laravel](https://lighthouse-php.com/)
+-   [Tutorial GraphQL Laravel Youtube](https://www.youtube.com/watch?v=Qw09efj-oUg)
