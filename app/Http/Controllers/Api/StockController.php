@@ -108,19 +108,62 @@ class StockController extends Controller
      */
     public function update(Request $request, $id)
     {
+        // Validate User Token
+
+        // Validate Data
+        $validator = Validator::make($request->all(), [
+            'quantity' => 'required|integer|min:0',
+            'price' => 'required|numeric|min:0',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 400);
+        }
+
         $stock = Stock::find($id);
         if (!$stock) {
             return response()->json(['message' => 'Stock not found'], 404);
         }
-        $quantity = $request->input('quantity');
-        $price = $request->input('price');
+
         $stock->update([
-            'quantity' => $quantity,
-            'price' => $price
+            'quantity' => $request->input('quantity'),
+            'price' => $request->input('price')
         ]);
 
         // Update products in Redis using the service
         $this->productCacheService->updateRedisProducts();
+
+        // Update stocks in Redis
+        Redis::set('stocks', json_encode(Stock::all()));
+
+        return response()->json(['message' => 'Stock updated successfully', 'stock' => $stock], 200);
+    }
+
+
+    /**
+     * Places an order and updates the stock quantity.
+     */
+    public function placeOrder(Request $request, $id)
+    {
+        // Validate Data
+        $validator = Validator::make($request->all(), [
+            'quantity' => 'required|integer|min:1',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['message' => 'Validation failed', 'errors' => $validator->errors()], 400);
+        }
+
+        $stock = Stock::find($id);
+        if (!$stock) {
+            return response()->json(['message' => 'Stock not found'], 404);
+        }
+
+        if ($request->input('quantity') > $stock->quantity) {
+            return response()->json(['message' => 'Insufficient stock'], 400);
+        }
+
+        $stock->decrement('quantity', $request->input('quantity'));
 
         // Update stocks in Redis
         Redis::set('stocks', json_encode(Stock::all()));
