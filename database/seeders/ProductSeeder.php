@@ -124,13 +124,16 @@ class ProductSeeder extends Seeder
             $product->category()->associate($productData['category']);
 
             foreach ($productData['stocks'] as $stockData) {
+                $lowestPrice = PHP_INT_MAX;
                 $color_id = $stockData['color_id'];
-
                 foreach ($stockData['sizes'] as $sizeData) {
                     $size_id = $sizeData['size_id'];
                     $quantity = $sizeData['quantity'];
                     $price = $sizeData['price'];
 
+                    if ($price < $lowestPrice) {
+                        $lowestPrice = $price;
+                    }
                     Stock::create([
                         'product_id' => $product->id,
                         'color_id' => $color_id,
@@ -140,6 +143,9 @@ class ProductSeeder extends Seeder
                     ]);
                 }
             }
+
+            $product->price = $lowestPrice;
+            $product->save();
         }
         Redis::flushAll();
     }

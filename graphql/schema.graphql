@@ -1,6 +1,10 @@
 type Query {
     products: [Product!] @paginate
-    findProducts(id: ID @eq): Product @find
+    findProduct(id: ID @eq): Product @find
+    findColor(id: ID @eq): Color @find
+    findCategory(id: ID @eq): Category @find
+    findSize(id: ID @eq): Size @find
+    findStock(id: ID @eq): Stock @find
     searchProducts(search: String @search): [Product!] @paginate
 }
 
@@ -11,9 +15,37 @@ type Product {
     gender: String!
     description: String
     category: Category
+    stocks: [Stock]
+    sizes: [Size]
+    colors: [Color]
 }
 
 type Category {
     id: ID!
     name: String!
+    parentCategory: Category
+    subCategories: [Category]
+}
+
+type Color {
+    id: ID!
+    hex_color: String!
+}
+
+type Size {
+    id: ID!
+    name: String!
+}
+
+type Image {
+    id: ID!
+    path: String!
+}
+
+type Stock {
+    id: ID!
+    size: Size!
+    color: Color!
+    quantity: Int
+    price: Float
 }

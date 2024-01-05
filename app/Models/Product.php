@@ -79,16 +79,9 @@ class Product extends Model
         ];
     }
 
-    public function toSearchableArray(): array
+    public function toSearchableArray()
     {
-        $array = $this->toArray();
-
-        // Customize array...
-        $array['image_product'] = $this->images()->first();
-        $array['category_name'] = $this->category()->first()->name;
-        $array['color_all'] = $this->colors()->get();
-        $array['size_all'] = $this->sizes()->get();
-
+        $array = $this->with('colors', 'sizes', 'images')->where('id', $this->id)->first()->toArray();
         return $array;
     }
 }
