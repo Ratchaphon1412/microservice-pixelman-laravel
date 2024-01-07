@@ -14,3 +14,7 @@ COPY . /var/www/html
 RUN composer install --no-dev --no-interaction --optimize-autoloader --no-progress --no-suggest --no-scripts
 
 
+RUN chown -R www-data:www-data /var/www/html/storage
+
+RUN php artisan storage:link
+
