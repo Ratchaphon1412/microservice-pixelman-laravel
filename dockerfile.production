@@ -7,4 +7,10 @@ RUN apt-get update \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
+
 COPY . /var/www/html
+
+# Build the application
+RUN composer install --no-dev --no-interaction --optimize-autoloader --no-progress --no-suggest --no-scripts
+
+
