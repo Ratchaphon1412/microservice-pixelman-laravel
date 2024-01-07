@@ -1,3 +1,4 @@
+
 # Set our base image
 FROM serversideup/php:8.2-fpm-nginx-v2.2.1
 
@@ -8,13 +9,9 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
 
 
-COPY . /var/www/html
-
-# Build the application
-RUN composer install --no-dev --no-interaction --optimize-autoloader --no-progress --no-suggest --no-scripts
 
 
-RUN chown -R www-data:www-data /var/www/html/storage
 
-RUN php artisan storage:link
+
+
 
