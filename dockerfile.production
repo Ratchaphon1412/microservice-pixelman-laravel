@@ -2,6 +2,9 @@ FROM php:8.2-apache
 
 # Install required packages
 RUN apt-get update && apt-get install -y \
+    git  \
+    zip \
+    unzip \
     libpq-dev \
     mariadb-client \
     libzip-dev \
