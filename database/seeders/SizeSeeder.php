@@ -2,9 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Size;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
+
+use App\Models\Size;
 
 class SizeSeeder extends Seeder
 {
@@ -13,20 +14,7 @@ class SizeSeeder extends Seeder
      */
     public function run(): void
     {
-        $size = new Size();
-        $size->name = 'S';
-        $size->save();
-
-        $size = new Size();
-        $size->name = 'M';
-        $size->save();
-
-        $size = new Size();
-        $size->name = 'L';
-        $size->save();
-
-        $size = new Size();
-        $size->name = 'XL';
-        $size->save();
+        //
+        Size::factory()->count(4)->create();
     }
 }

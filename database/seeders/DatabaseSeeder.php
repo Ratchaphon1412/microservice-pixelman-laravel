@@ -16,8 +16,13 @@ class DatabaseSeeder extends Seeder
             ColorSeeder::class,
             CategorySeeder::class,
             SizeSeeder::class,
-            ImageSeeder::class,
             ProductSeeder::class,
+            ImageSeeder::class,
+            StockSeeder::class,
+            ColorProductSeeder::class,
+            SizeProductSeeder::class,
+            CategoryProductSeeder::class,
+
         ]);
     }
 }
