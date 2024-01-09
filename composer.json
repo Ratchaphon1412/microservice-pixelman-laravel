@@ -12,6 +12,7 @@
         "laravel/sanctum": "^3.3",
         "laravel/scout": "^10.6",
         "laravel/tinker": "^2.8",
+        "league/flysystem-aws-s3-v3": "^3.22",
         "meilisearch/meilisearch-php": "^1.5",
         "mll-lab/laravel-graphiql": "^3.1",
         "nuwave/lighthouse": "^6.29",
