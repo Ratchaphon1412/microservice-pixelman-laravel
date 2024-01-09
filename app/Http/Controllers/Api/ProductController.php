@@ -11,6 +11,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Redis;
 use Illuminate\Support\Facades\Validator;
 use Symfony\Component\Console\Input\Input;
+use Illuminate\Support\Facades\Storage;
 
 class ProductController extends Controller
 {
@@ -81,12 +82,23 @@ class ProductController extends Controller
             foreach ($request->file('images') as $image) {
 
                 $imageName = time() . '_' . $image->getClientOriginalName();
-                $image->move(public_path('images/products'), $imageName);
-                $path = 'images/products/' . $imageName;
+                // $image->move(public_path('images/products'), $imageName);
+                // $path = 'images/products/' . $imageName;
+
+                $check = Storage::cloud()->put('images/' . $imageName, file_get_contents($image));
+
+                if ($check) {
+                    $url = Storage::cloud()->url('pixelmanstorage/images/' . $imageName);
+                    $path = Storage::cloud()->path('pixelmanstorage/images/' . $imageName);
+                } else {
+                    return response()->json(['message' => 'Image upload failed'], 500);
+                }
+
 
                 $product->images()->create([
                     'product_id' => $product->id,
                     'path' => $path,
+                    'url' => $url
                 ]);
             }
         }
@@ -169,8 +181,16 @@ class ProductController extends Controller
      */
     public function destroy(Product $product)
     {
+        // delete image from cloud
+        foreach ($product->images as $image) {
+            Storage::cloud()->delete($image->path);
+        }
+        $product->images()->delete();
+
         $product->stocks()->delete();
         $product->delete();
+
+
 
         // Update products in Redis using the service
         $this->productCacheService->updateRedisProducts();

@@ -19,15 +19,16 @@ class ImageFactory extends Factory
         // Save the image to the storage cloud
 
         Storage::cloud()->put('images/' . $imagePath, $imageContents);
-
-        $url = Storage::cloud()->url('test/images/' . $imagePath);
+        $path = Storage::cloud()->path('pixelmanstorage/images/' . $imagePath);
+        $url = Storage::cloud()->url('pixelmanstorage/images/' . $imagePath);
 
         // Get the URL path of the stored image
 
 
         return [
             'product_id' => Product::all()->random()->id,
-            'path' => $url,
+            'path' => $path,
+            'url' => $url,
         ];
     }
 }
