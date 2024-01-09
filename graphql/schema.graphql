@@ -18,6 +18,7 @@ type Product {
     stocks: [Stock]
     sizes: [Size]
     colors: [Color]
+    images: [Image]
 }
 
 type Category {
