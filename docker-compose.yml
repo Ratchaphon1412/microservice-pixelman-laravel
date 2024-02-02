@@ -21,6 +21,7 @@ services:
             - ".:/var/www/html"
         networks:
             - sail
+            - kafka-nework
         depends_on:
             - mysql
             - redis
@@ -96,8 +97,46 @@ services:
                 - "http://localhost:7700/health"
             retries: 3
             timeout: 5s
+    zookeeper:
+        image: "bitnami/zookeeper:3.7"
+        restart: always
+        container_name: zookeeper
+        environment:
+            ALLOW_ANONYMOUS_LOGIN: "yes"
+        networks:
+            - kafka-nework
+    # message broker - kafka
+    # reference: https://github.com/bitnami/bitnami-docker-kafka/blob/master/docker-compose.yml
+    kafka:
+        image: "bitnami/kafka:latest"
+        restart: always
+        container_name: kafka
+        environment:
+            KAFKA_CFG_ZOOKEEPER_CONNECT: zookeeper:2181
+            ALLOW_PLAINTEXT_LISTENER: "yes"
+
+        ports:
+            - "9092:9092"
+        networks:
+            - kafka-nework
+        depends_on:
+            - zookeeper
+    kafka-ui:
+        container_name: kafka-ui
+        image: provectuslabs/kafka-ui:latest
+        ports:
+            - 8080:8080
+        environment:
+            DYNAMIC_CONFIG_ENABLED: "true"
+            KAFKA_CLUSTERS_0_NAME: kafka
+            KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+
+        networks:
+            - kafka-nework
 networks:
     sail:
+        driver: bridge
+    kafka-nework:
         driver: bridge
 volumes:
     sail-mysql:
